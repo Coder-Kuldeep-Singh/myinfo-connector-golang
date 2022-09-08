@@ -65,19 +65,19 @@ func GenerateSignature(privateKey *rsa.PrivateKey, baseString string) (string, e
 func GenerateBaseString(httpMethod string, apiURL string, appId string, params ParamsSort, contentType string, nonceValue string, timestamp string) string {
 	var defaultAuthHeader = []Params{
 		{
-			Name:  "app_id",
+			Name:  common.APP_ID,
 			Value: appId,
 		},
 		{
-			Name:  "nonce",
+			Name:  common.NONCE,
 			Value: nonceValue,
 		},
 		{
-			Name:  "signature_method",
-			Value: "RS256",
+			Name:  common.SIGNATURE_METHOD,
+			Value: common.RS256,
 		},
 		{
-			Name:  "timestamp",
+			Name:  common.TIMESTAMP,
 			Value: timestamp,
 		},
 	}
@@ -213,4 +213,12 @@ func DecryptJWE(pemPrivaKey *rsa.PrivateKey, compactJWE string) (string, error) 
 	fmt.Println("vl", payload, "\nres", string(decrypted), "\nerr", err)
 
 	return string(decrypted), nil
+}
+
+func Unmarshal(data []byte, v interface{}) error {
+	err := json.Unmarshal(data, v)
+	if err != nil {
+		return err
+	}
+	return nil
 }
