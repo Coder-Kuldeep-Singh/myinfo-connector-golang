@@ -14,7 +14,7 @@ import (
 	"github.com/mavensingh/myinfo-connector-golang/lib"
 )
 
-func (appConfig MyInfoConfig) GetAccessToken(authCode string, state string) (map[string]interface{}, error) {
+func (appConfig AppConfig) GetAccessToken(authCode string, state string) (map[string]interface{}, error) {
 	if !isInitialized {
 		return nil, errors.New(common.ERROR_UNKNOWN_NOT_INIT)
 	}
@@ -38,7 +38,7 @@ func (appConfig MyInfoConfig) GetAccessToken(authCode string, state string) (map
 	return tokenData, nil
 }
 
-func (appConfig MyInfoConfig) CallTokenAPI(authCode string, privateKey *rsa.PrivateKey, state string) ([]byte, error) {
+func (appConfig AppConfig) CallTokenAPI(authCode string, privateKey *rsa.PrivateKey, state string) ([]byte, error) {
 	if !isInitialized {
 		return nil, errors.New(common.ERROR_UNKNOWN_NOT_INIT)
 	}

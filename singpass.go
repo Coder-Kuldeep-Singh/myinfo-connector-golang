@@ -10,12 +10,28 @@ import (
 
 var isInitialized bool
 
-type MyInfoConfig common.AppConfig
+type AppConfig struct {
+	MYINFO_SIGNATURE_CERT_PUBIC_CERT string
+	CLIENT_ID                        string
+	CLIENT_SECRET                    string
+	CLIENT_SECURE_CERT               string
+	CLIENT_SECURE_CERT_PASSPHRASE    string
+	REDIRECT_URL                     string
+	PURPOSE                          string
+	ATTRIBUTES                       string
+	ENVIRONMENT                      string
+	TOKEN_URL                        string
+	PERSON_URL                       string
+
+	// Proxy parameters (OPTIONAL)
+	USE_PROXY        string // Indicate whether proxy url is used. i.e Y or N
+	PROXY_TOKEN_URL  string // Configure your proxy url here, if any
+	PROXY_PERSON_URL string // Configure your proxy url here, if anys
+}
 
 // MyInfoConnector passes the
-func MyInfoConnector(appConfig common.AppConfig) error {
-	config := MyInfoConfig(appConfig)
-	err := config.CheckConfig()
+func MyInfoConnector(appConfig AppConfig) error {
+	err := appConfig.CheckConfig()
 	if err != nil {
 		return err
 	}
@@ -23,7 +39,7 @@ func MyInfoConnector(appConfig common.AppConfig) error {
 	return nil
 }
 
-func (appConfig MyInfoConfig) CheckConfig() error {
+func (appConfig AppConfig) CheckConfig() error {
 	if strings.TrimSpace(appConfig.MYINFO_SIGNATURE_CERT_PUBIC_CERT) == "" {
 		return errors.New(common.ERROR_CONFIGURATION_ATTRIBUTES_NOT_FOUND)
 	}
@@ -54,6 +70,7 @@ func (appConfig MyInfoConfig) CheckConfig() error {
 	if strings.TrimSpace(appConfig.ATTRIBUTES) == "" {
 		return errors.New(common.ERROR_CONFIGURATION_ATTRIBUTES_NOT_FOUND)
 	}
+
 	if strings.TrimSpace(appConfig.USE_PROXY) == "Y" {
 		if strings.TrimSpace(appConfig.PROXY_TOKEN_URL) == "" {
 			return errors.New(common.ERROR_CONFIGURATION_PROXY_TOKEN_URL_NOT_FOUND)
@@ -65,7 +82,7 @@ func (appConfig MyInfoConfig) CheckConfig() error {
 	return nil
 }
 
-func (appConfig MyInfoConfig) GetMyInfoPersonData(authCode, state string) (map[string]interface{}, error) {
+func (appConfig AppConfig) GetMyInfoPersonData(authCode, state string) (map[string]interface{}, error) {
 	if !isInitialized {
 		return nil, errors.New(common.ERROR_UNKNOWN_NOT_INIT)
 	}
