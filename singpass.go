@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/mavensingh/myinfo-connector-golang/common"
+	"github.com/mavensingh/myinfo-connector-golang/lib"
 )
 
 var isInitialized bool
@@ -62,4 +63,25 @@ func (appConfig MyInfoConfig) CheckConfig() error {
 		}
 	}
 	return nil
+}
+
+func (appConfig MyInfoConfig) GetMyInfoPersonData(authCode, state string) (map[string]interface{}, error) {
+	if !isInitialized {
+		return nil, errors.New(common.ERROR_UNKNOWN_NOT_INIT)
+	}
+
+	var personData map[string]interface{}
+	var err error
+
+	_, err = lib.GenerateRandomHex(10)
+	if err != nil {
+		return personData, err
+	}
+
+	accessToken, err := appConfig.GetAccessToken(authCode, state)
+	if err != nil {
+		return personData, err
+	}
+
+	return accessToken, nil
 }
