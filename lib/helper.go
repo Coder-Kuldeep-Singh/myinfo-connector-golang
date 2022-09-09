@@ -222,11 +222,12 @@ func Unmarshal(data []byte, v interface{}) error {
 
 func AuthHeader(apiURL string, params ParamsSort, httpMethod string, contentType string, environment string, appId string, privateKey *rsa.PrivateKey, clientSecret string) (string, error) {
 	var authHeader string
+	var err error
 
 	if environment == common.SINPASS_SANDBOX_ENVIRONMENT {
 		// No Headers
 	} else if (environment == common.SINPASS_TEST_ENVIRONMENT) || (environment == common.SINPASS_PRODUCTION_ENVIRONMENT) {
-		authHeader, err := GenerateAuthorizationHeader(
+		authHeader, err = GenerateAuthorizationHeader(
 			apiURL,
 			params,
 			common.HTTP_METHOD_POST,
