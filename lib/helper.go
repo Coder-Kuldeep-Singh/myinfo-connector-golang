@@ -226,6 +226,7 @@ func AuthHeader(apiURL string, params ParamsSort, httpMethod string, contentType
 
 	if environment == common.SINPASS_SANDBOX_ENVIRONMENT {
 		// No Headers
+		return "", nil
 	} else if (environment == common.SINPASS_TEST_ENVIRONMENT) || (environment == common.SINPASS_PRODUCTION_ENVIRONMENT) {
 		authHeader, err = GenerateAuthorizationHeader(
 			apiURL,
@@ -240,8 +241,8 @@ func AuthHeader(apiURL string, params ParamsSort, httpMethod string, contentType
 		if err != nil {
 			return authHeader, err
 		}
+		return authHeader, nil
 	} else {
 		return authHeader, errors.New(common.ERROR_UNKNOWN_AUTH_LEVEL)
 	}
-	return authHeader, nil
 }
