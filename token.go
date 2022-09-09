@@ -1,11 +1,8 @@
-package sinpass
+package myinfoconnectorgolang
 
 import (
 	"crypto/rsa"
-	"crypto/tls"
 	"errors"
-	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -14,23 +11,18 @@ import (
 	"github.com/mavensingh/myinfo-connector-golang/lib"
 )
 
-func (appConfig AppConfig) GetAccessToken(authCode string, state string) (map[string]interface{}, error) {
+func (appConfig AppConfig) GetAccessToken(authCode string, state string) ([]byte, error) {
 	if !isInitialized {
 		return nil, errors.New(common.ERROR_UNKNOWN_NOT_INIT)
 	}
 
-	var tokenData map[string]interface{}
+	var tokenData []byte
 	privateKey, err := lib.DecryptPrivateKey(appConfig.CLIENT_SECURE_CERT, appConfig.CLIENT_SECURE_CERT_PASSPHRASE)
 	if err != nil {
 		return tokenData, err
 	}
 
-	resp, err := appConfig.CallTokenAPI(authCode, privateKey, state)
-	if err != nil {
-		return tokenData, err
-	}
-
-	err = lib.Unmarshal(resp, &tokenData)
+	tokenData, err = appConfig.CallTokenAPI(authCode, privateKey, state)
 	if err != nil {
 		return tokenData, err
 	}
@@ -89,26 +81,18 @@ func (appConfig AppConfig) CallTokenAPI(authCode string, privateKey *rsa.Private
 		return response, err
 	}
 
-	var authHeader string
-
-	if appConfig.ENVIRONMENT == common.SINPASS_SANDBOX_ENVIRONMENT {
-		// No Headers
-	} else if (appConfig.ENVIRONMENT == common.SINPASS_TEST_ENVIRONMENT) || (appConfig.ENVIRONMENT == common.SINPASS_PRODUCTION_ENVIRONMENT) {
-		authHeader, err = lib.GenerateAuthorizationHeader(
-			appConfig.TOKEN_URL,
-			params,
-			common.HTTP_METHOD_POST,
-			common.CONTENT_TYPE,
-			appConfig.ENVIRONMENT,
-			appConfig.CLIENT_ID,
-			privateKey,
-			appConfig.CLIENT_SECRET,
-		)
-		if err != nil {
-			return response, err
-		}
-	} else {
-		return response, errors.New(common.ERROR_UNKNOWN_AUTH_LEVEL)
+	authHeader, err := lib.AuthHeader(
+		appConfig.TOKEN_URL,
+		params,
+		common.HTTP_METHOD_POST,
+		common.CONTENT_TYPE,
+		appConfig.ENVIRONMENT,
+		appConfig.CLIENT_ID,
+		privateKey,
+		appConfig.CLIENT_SECRET,
+	)
+	if err != nil {
+		return response, err
 	}
 
 	request.Header.Set(common.CONTENT, common.CONTENT_TYPE)
@@ -117,26 +101,7 @@ func (appConfig AppConfig) CallTokenAPI(authCode string, privateKey *rsa.Private
 		request.Header.Add(common.AUTHORIZATION, authHeader)
 	}
 
-	client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-
-	httpResponse, err := client.Do(request)
-	if err != nil {
-		return response, err
-	}
-	defer httpResponse.Body.Close()
-
-	if httpResponse.StatusCode != http.StatusOK {
-		msg := fmt.Sprintf("%s %d", common.UNEXPECTED_STATUS_CODE, httpResponse.StatusCode)
-		return response, errors.New(msg)
-	}
-
-	response, err = ioutil.ReadAll(httpResponse.Body)
+	response, err = SendRequest(request)
 	if err != nil {
 		return response, err
 	}

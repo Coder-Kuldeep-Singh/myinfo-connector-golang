@@ -47,4 +47,7 @@ const (
 	NO_CACHE                                                    string = "no-cache"
 	CONTENT                                                     string = "Content-Type"
 	UNEXPECTED_STATUS_CODE                                      string = "unexpected status code found:"
+	PARAM_ATTRIBUTES                                            string = "attributes"
+	PARAM_TXNNO                                                 string = "txnNo"
+	BEARER                                                      string = "Bearer"
 )

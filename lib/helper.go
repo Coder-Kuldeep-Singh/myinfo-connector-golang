@@ -1,7 +1,6 @@
 package lib
 
 import (
-	"bytes"
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
@@ -157,7 +156,7 @@ func GenerateAuthorizationHeader(apiURL string, params ParamsSort, httpMethod st
 	}
 }
 
-func Decode(payload string) (map[string]interface{}, error) {
+func Decode(payload string) ([]byte, error) {
 	s := strings.Split(payload, ".")
 	if len(s) < 2 {
 		return nil, errors.New(common.INVALID_TOKEN)
@@ -167,12 +166,10 @@ func Decode(payload string) (map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	var data map[string]interface{}
-	err = json.NewDecoder(bytes.NewBuffer(decodedData)).Decode(&data)
-	return data, err
+	return decodedData, err
 }
 
-func VerifyJWS(publicCert string, accessToken string) (map[string]interface{}, error) {
+func VerifyJWS(publicCert string, accessToken string) ([]byte, error) {
 	keyData, err := ioutil.ReadFile(publicCert)
 	if err != nil {
 		return nil, err
@@ -221,4 +218,29 @@ func Unmarshal(data []byte, v interface{}) error {
 		return err
 	}
 	return nil
+}
+
+func AuthHeader(apiURL string, params ParamsSort, httpMethod string, contentType string, environment string, appId string, privateKey *rsa.PrivateKey, clientSecret string) (string, error) {
+	var authHeader string
+
+	if environment == common.SINPASS_SANDBOX_ENVIRONMENT {
+		// No Headers
+	} else if (environment == common.SINPASS_TEST_ENVIRONMENT) || (environment == common.SINPASS_PRODUCTION_ENVIRONMENT) {
+		authHeader, err := GenerateAuthorizationHeader(
+			apiURL,
+			params,
+			common.HTTP_METHOD_POST,
+			common.CONTENT_TYPE,
+			environment,
+			appId,
+			privateKey,
+			clientSecret,
+		)
+		if err != nil {
+			return authHeader, err
+		}
+	} else {
+		return authHeader, errors.New(common.ERROR_UNKNOWN_AUTH_LEVEL)
+	}
+	return authHeader, nil
 }

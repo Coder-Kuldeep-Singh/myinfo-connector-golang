@@ -1,7 +1,10 @@
-package sinpass
+package myinfoconnectorgolang
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
+	"log"
 	"strings"
 
 	"github.com/mavensingh/myinfo-connector-golang/common"
@@ -82,23 +85,37 @@ func (appConfig AppConfig) CheckConfig() error {
 	return nil
 }
 
-func (appConfig AppConfig) GetMyInfoPersonData(authCode, state string) (map[string]interface{}, error) {
+func (appConfig AppConfig) GetMyInfoPersonData(authCode, state string) ([]byte, error) {
 	if !isInitialized {
 		return nil, errors.New(common.ERROR_UNKNOWN_NOT_INIT)
 	}
 
-	var personData map[string]interface{}
+	var personData []byte
 	var err error
 
-	_, err = lib.GenerateRandomHex(10)
+	txnNo, err := lib.GenerateRandomHex(10)
 	if err != nil {
 		return personData, err
 	}
 
-	accessToken, err := appConfig.GetAccessToken(authCode, state)
+	token, err := appConfig.GetAccessToken(authCode, state)
 	if err != nil {
 		return personData, err
 	}
 
-	return accessToken, nil
+	var data map[string]interface{}
+	err = json.NewDecoder(bytes.NewBuffer(token)).Decode(&data)
+	if err != nil {
+		return personData, err
+	}
+
+	log.Println("TOKEN API RESPONSE: ", data)
+	log.Println("ACCESS TOKEN: ", data["access_token"].(string))
+
+	personData, err = appConfig.GetPersonData(data["access_token"].(string), txnNo)
+	if err != nil {
+		return personData, err
+	}
+
+	return personData, nil
 }
