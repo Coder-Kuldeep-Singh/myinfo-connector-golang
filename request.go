@@ -6,10 +6,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-
-	"github.com/mavensingh/myinfo-connector-golang/common"
 )
 
+/**
+ * Send Request
+ *
+ * This function is a wrapper to make https call
+ *
+ * Returns the response of the hit api
+ */
 func SendRequest(request *http.Request) ([]byte, error) {
 	client := &http.Client{
 		Transport: &http.Transport{
@@ -30,7 +35,7 @@ func SendRequest(request *http.Request) ([]byte, error) {
 		return []byte{}, err
 	}
 	if httpResponse.StatusCode != http.StatusOK {
-		msg := fmt.Sprintf("%s %d\nresponse: %s", common.UNEXPECTED_STATUS_CODE, httpResponse.StatusCode, string(response))
+		msg := fmt.Sprintf("%s %d\nresponse: %s", UNEXPECTED_STATUS_CODE, httpResponse.StatusCode, string(response))
 		return []byte{}, errors.New(msg)
 	}
 

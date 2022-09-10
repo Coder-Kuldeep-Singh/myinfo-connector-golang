@@ -6,18 +6,26 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-
-	"github.com/mavensingh/myinfo-connector-golang/common"
-	"github.com/mavensingh/myinfo-connector-golang/lib"
 )
+
+/**
+ * Get Access Token from MyInfo Token API
+ *
+ * This method calls the Token API and obtain an "access token" from response,
+ * which can be used to call the Person API for the actual data.
+ * Your application needs to provide a valid "authorisation code"
+ * from the authorise API(callback) in exchange for the valid "access token".
+ *
+ * Returns the Access Token API response as []byte which includes all data sent by Access Token API
+ */
 
 func (appConfig AppConfig) GetAccessToken(authCode string, state string) ([]byte, error) {
 	if !isInitialized {
-		return nil, errors.New(common.ERROR_UNKNOWN_NOT_INIT)
+		return nil, errors.New(ERROR_UNKNOWN_NOT_INIT)
 	}
 
 	var tokenData []byte
-	privateKey, err := lib.DecryptPrivateKey(appConfig.CLIENT_SECURE_CERT, appConfig.CLIENT_SECURE_CERT_PASSPHRASE)
+	privateKey, err := DecryptPrivateKey(appConfig.CLIENT_SECURE_CERT, appConfig.CLIENT_SECURE_CERT_PASSPHRASE)
 	if err != nil {
 		return tokenData, err
 	}
@@ -30,62 +38,70 @@ func (appConfig AppConfig) GetAccessToken(authCode string, state string) ([]byte
 	return tokenData, nil
 }
 
+/**
+ * Call (Access) Token API
+ *
+ * This method will generate the Authorization Header
+ * and call the Token API to retrieve access token.
+ *
+ * Returns the full json response as []byte.
+ */
 func (appConfig AppConfig) CallTokenAPI(authCode string, privateKey *rsa.PrivateKey, state string) ([]byte, error) {
 	if !isInitialized {
-		return nil, errors.New(common.ERROR_UNKNOWN_NOT_INIT)
+		return nil, errors.New(ERROR_UNKNOWN_NOT_INIT)
 	}
 
 	var response []byte
 	var err error
 
 	value := url.Values{}
-	value.Set(common.PARAM_REDIRECT_URL, appConfig.REDIRECT_URL)
-	value.Set(common.PARAM_CLIENT_ID, appConfig.CLIENT_ID)
-	value.Set(common.PARAM_CLIENT_SECRET, appConfig.CLIENT_SECRET)
-	value.Set(common.PARAM_CODE, authCode)
-	value.Set(common.PARAM_GRANT_TYPE, common.AUTHORIZATION_CODE)
+	value.Set(PARAM_REDIRECT_URL, appConfig.REDIRECT_URL)
+	value.Set(PARAM_CLIENT_ID, appConfig.CLIENT_ID)
+	value.Set(PARAM_CLIENT_SECRET, appConfig.CLIENT_SECRET)
+	value.Set(PARAM_CODE, authCode)
+	value.Set(PARAM_GRANT_TYPE, AUTHORIZATION_CODE)
 
-	params := lib.ParamsSort{
+	params := ParamsSort{
 		{
-			Name:  common.PARAM_GRANT_TYPE,
-			Value: common.AUTHORIZATION_CODE,
+			Name:  PARAM_GRANT_TYPE,
+			Value: AUTHORIZATION_CODE,
 		},
 		{
-			Name:  common.PARAM_CLIENT_ID,
+			Name:  PARAM_CLIENT_ID,
 			Value: appConfig.CLIENT_ID,
 		},
 		{
-			Name:  common.PARAM_CLIENT_SECRET,
+			Name:  PARAM_CLIENT_SECRET,
 			Value: appConfig.CLIENT_SECRET,
 		},
 		{
-			Name:  common.PARAM_CODE,
+			Name:  PARAM_CODE,
 			Value: authCode,
 		},
 		{
-			Name:  common.PARAM_REDIRECT_URL,
+			Name:  PARAM_REDIRECT_URL,
 			Value: appConfig.REDIRECT_URL,
 		},
 	}
 
 	if strings.TrimSpace(state) != "" {
-		value.Set(common.PARAM_STATE, state)
-		params = append(params, lib.Params{
-			Name:  common.PARAM_STATE,
+		value.Set(PARAM_STATE, state)
+		params = append(params, Params{
+			Name:  PARAM_STATE,
 			Value: state,
 		})
 	}
 
-	request, err := http.NewRequest(common.HTTP_METHOD_POST, appConfig.TOKEN_URL, strings.NewReader(value.Encode()))
+	request, err := http.NewRequest(HTTP_METHOD_POST, appConfig.TOKEN_URL, strings.NewReader(value.Encode()))
 	if err != nil {
 		return response, err
 	}
 
-	authHeader, err := lib.AuthHeader(
+	authHeader, err := AuthHeader(
 		appConfig.TOKEN_URL,
 		params,
-		common.HTTP_METHOD_POST,
-		common.CONTENT_TYPE,
+		HTTP_METHOD_POST,
+		CONTENT_TYPE,
 		appConfig.ENVIRONMENT,
 		appConfig.CLIENT_ID,
 		privateKey,
@@ -95,10 +111,10 @@ func (appConfig AppConfig) CallTokenAPI(authCode string, privateKey *rsa.Private
 		return response, err
 	}
 
-	request.Header.Set(common.CONTENT, common.CONTENT_TYPE)
-	request.Header.Add(common.CACHE_CONTROL, common.NO_CACHE)
+	request.Header.Set(CONTENT, CONTENT_TYPE)
+	request.Header.Add(CACHE_CONTROL, NO_CACHE)
 	if authHeader != "" {
-		request.Header.Add(common.AUTHORIZATION, authHeader)
+		request.Header.Add(AUTHORIZATION, authHeader)
 	}
 
 	response, err = SendRequest(request)

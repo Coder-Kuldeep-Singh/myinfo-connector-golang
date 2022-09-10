@@ -6,17 +6,25 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-
-	"github.com/mavensingh/myinfo-connector-golang/common"
-	"github.com/mavensingh/myinfo-connector-golang/lib"
 )
+
+/**
+ * Get Person Data from MyInfo Person API
+ *
+ * This method calls the Person API and returns a JSON response with the
+ * personal data that was requested. Your application needs to provide a
+ * valid "access token" in exchange for the JSON data. Once your application
+ * receives this JSON data, you can use this data.
+ *
+ * Returns the Person Data (Payload decrypted + Signature validated)
+ */
 
 func (appConfig AppConfig) GetPersonData(accessToken, txnNo string) ([]byte, error) {
 	if !isInitialized {
-		return nil, errors.New(common.ERROR_UNKNOWN_NOT_INIT)
+		return nil, errors.New(ERROR_UNKNOWN_NOT_INIT)
 	}
 
-	privateKey, err := lib.DecryptPrivateKey(appConfig.CLIENT_SECURE_CERT, appConfig.CLIENT_SECURE_CERT_PASSPHRASE)
+	privateKey, err := DecryptPrivateKey(appConfig.CLIENT_SECURE_CERT, appConfig.CLIENT_SECURE_CERT_PASSPHRASE)
 	if err != nil {
 		return nil, err
 	}
@@ -30,13 +38,22 @@ func (appConfig AppConfig) GetPersonData(accessToken, txnNo string) ([]byte, err
 
 }
 
+/**
+ * Get Person Data With Key
+ *
+ * This method will take in the accessToken from Token API and decode it
+ * to get the sub(eg either uinfin or uuid). It will call the Person API using the token and sub.
+ * It will verify the Person API data's signature and decrypt the result.
+ *
+ * Returns decrypted result from calling Person API
+ */
 func (appConfig AppConfig) GetPersonDataWithKey(accessToken, txnNo string, privateKey *rsa.PrivateKey) ([]byte, error) {
 	if !isInitialized {
-		return nil, errors.New(common.ERROR_UNKNOWN_NOT_INIT)
+		return nil, errors.New(ERROR_UNKNOWN_NOT_INIT)
 	}
 	var resp []byte
 
-	tokenBytes, err := lib.VerifyJWS(appConfig.MYINFO_SIGNATURE_CERT_PUBIC_CERT, accessToken)
+	tokenBytes, err := VerifyJWS(appConfig.MYINFO_SIGNATURE_CERT_PUBIC_CERT, accessToken)
 	if err != nil {
 		return resp, err
 	}
@@ -52,19 +69,19 @@ func (appConfig AppConfig) GetPersonDataWithKey(accessToken, txnNo string, priva
 		if err != nil {
 			return resp, err
 		}
-		if appConfig.ENVIRONMENT == common.SINPASS_SANDBOX_ENVIRONMENT {
-			err := lib.Unmarshal(personBytes, &resp)
+		if appConfig.ENVIRONMENT == SINPASS_SANDBOX_ENVIRONMENT {
+			err := Unmarshal(personBytes, &resp)
 			if err != nil {
 				return resp, err
 			}
 		}
 
-		decryptedRes, err := lib.DecryptJWE(privateKey, string(personBytes))
+		decryptedRes, err := DecryptJWE(privateKey, string(personBytes))
 		if err != nil {
 			return resp, err
 		}
 
-		decodedData, err := lib.Decode(decryptedRes)
+		decodedData, err := Decode(decryptedRes)
 		if err != nil {
 			return resp, err
 		}
@@ -72,13 +89,21 @@ func (appConfig AppConfig) GetPersonDataWithKey(accessToken, txnNo string, priva
 		return decodedData, nil
 	}
 
-	return resp, errors.New(common.UINFIN_NOT_FOUND)
+	return resp, errors.New(UINFIN_NOT_FOUND)
 
 }
 
+/**
+ * Call Person API
+ *
+ * This method will generate the Authorization Header and
+ * and call the Person API to get the encrypted Person Data
+ *
+ * Returns result from calling Person API
+ */
 func (appConfig AppConfig) CallPersonAPI(sub, accessToken, txnNo string, privateKey *rsa.PrivateKey) ([]byte, error) {
 	if !isInitialized {
-		return nil, errors.New(common.ERROR_UNKNOWN_NOT_INIT)
+		return nil, errors.New(ERROR_UNKNOWN_NOT_INIT)
 	}
 
 	var response []byte
@@ -86,30 +111,30 @@ func (appConfig AppConfig) CallPersonAPI(sub, accessToken, txnNo string, private
 
 	callPersonURL := appConfig.PERSON_URL + "/" + sub + "/"
 
-	params := lib.ParamsSort{
+	params := ParamsSort{
 		{
-			Name:  common.PARAM_CLIENT_ID,
+			Name:  PARAM_CLIENT_ID,
 			Value: appConfig.CLIENT_ID,
 		},
 		{
-			Name:  common.PARAM_ATTRIBUTES,
+			Name:  PARAM_ATTRIBUTES,
 			Value: appConfig.ATTRIBUTES,
 		},
 	}
 
 	var txnExists bool
 	if txnNo != "" {
-		params = append(params, lib.Params{
-			Name:  common.PARAM_TXNNO,
+		params = append(params, Params{
+			Name:  PARAM_TXNNO,
 			Value: txnNo,
 		})
 		txnExists = true
 	}
 
-	authHeader, err := lib.AuthHeader(
+	authHeader, err := AuthHeader(
 		callPersonURL,
 		params,
-		common.HTTP_METHOD_GET,
+		HTTP_METHOD_GET,
 		"",
 		appConfig.ENVIRONMENT,
 		appConfig.CLIENT_ID,
@@ -120,20 +145,20 @@ func (appConfig AppConfig) CallPersonAPI(sub, accessToken, txnNo string, private
 		return response, err
 	}
 
-	callPersonURL += "?" + common.PARAM_CLIENT_ID + "=" + appConfig.CLIENT_ID + "&" + common.PARAM_ATTRIBUTES + "=" + appConfig.ATTRIBUTES
+	callPersonURL += "?" + PARAM_CLIENT_ID + "=" + appConfig.CLIENT_ID + "&" + PARAM_ATTRIBUTES + "=" + appConfig.ATTRIBUTES
 	if txnExists {
-		callPersonURL += "&" + common.PARAM_TXNNO + "=" + txnNo
+		callPersonURL += "&" + PARAM_TXNNO + "=" + txnNo
 	}
 
-	request, err := http.NewRequest(common.HTTP_METHOD_GET, callPersonURL, nil)
+	request, err := http.NewRequest(HTTP_METHOD_GET, callPersonURL, nil)
 	if err != nil {
 		return response, err
 	}
-	request.Header.Set(common.CACHE_CONTROL, common.NO_CACHE)
+	request.Header.Set(CACHE_CONTROL, NO_CACHE)
 	if authHeader != "" {
-		request.Header.Set(common.AUTHORIZATION, authHeader+","+common.BEARER+" "+accessToken)
+		request.Header.Set(AUTHORIZATION, authHeader+","+BEARER+" "+accessToken)
 	} else {
-		request.Header.Set(common.AUTHORIZATION, common.BEARER+" "+accessToken)
+		request.Header.Set(AUTHORIZATION, BEARER+" "+accessToken)
 	}
 
 	response, err = SendRequest(request)

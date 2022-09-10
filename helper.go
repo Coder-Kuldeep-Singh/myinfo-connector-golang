@@ -1,4 +1,4 @@
-package lib
+package myinfoconnectorgolang
 
 import (
 	"crypto"
@@ -11,14 +11,12 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt"
-	"github.com/mavensingh/myinfo-connector-golang/common"
 	"golang.org/x/oauth2/jws"
 	"gopkg.in/square/go-jose.v2"
 	"software.sslmate.com/src/go-pkcs12"
@@ -64,25 +62,25 @@ func GenerateSignature(privateKey *rsa.PrivateKey, baseString string) (string, e
 func GenerateBaseString(httpMethod string, apiURL string, appId string, params ParamsSort, contentType string, nonceValue string, timestamp string) string {
 	var defaultAuthHeader = []Params{
 		{
-			Name:  common.APP_ID,
+			Name:  APP_ID,
 			Value: appId,
 		},
 		{
-			Name:  common.NONCE,
+			Name:  NONCE,
 			Value: nonceValue,
 		},
 		{
-			Name:  common.SIGNATURE_METHOD,
-			Value: common.RS256,
+			Name:  SIGNATURE_METHOD,
+			Value: RS256,
 		},
 		{
-			Name:  common.TIMESTAMP,
+			Name:  TIMESTAMP,
 			Value: timestamp,
 		},
 	}
 
 	// Remove params unless Content-Type is "application/x-www-form-urlencoded"
-	if (httpMethod == common.HTTP_METHOD_POST) && (contentType != common.CONTENT_TYPE) {
+	if (httpMethod == HTTP_METHOD_POST) && (contentType != CONTENT_TYPE) {
 		params = ParamsSort{}
 	} else {
 		params = append(params, defaultAuthHeader...)
@@ -100,6 +98,13 @@ func GenerateBaseString(httpMethod string, apiURL string, appId string, params P
 	return baseString
 }
 
+/**
+ * Get Private Key
+ *
+ * This methods will decrypt P12 Certificate and retrieve the Private key with the passphrase
+
+ * Returns private key from p12
+ */
 func DecryptPrivateKey(secureCertLocation string, passphrase string) (*rsa.PrivateKey, error) {
 	fileData, err := ioutil.ReadFile(secureCertLocation)
 	if err != nil {
@@ -112,12 +117,19 @@ func DecryptPrivateKey(secureCertLocation string, passphrase string) (*rsa.Priva
 
 	privateKey, ok := parsedKey.(*rsa.PrivateKey)
 	if !ok {
-		return nil, errors.New(common.FAILED_TO_PARSE_RSA_PRIVATE_KEY)
+		return nil, errors.New(FAILED_TO_PARSE_RSA_PRIVATE_KEY)
 	}
 
 	return privateKey, nil
 }
 
+/**
+ * Generate Random Hex
+ *
+ * This method helps to generate unique Transaction ID(txnNo)
+ *
+ * Returns random hex(txnNo)
+ */
 func GenerateRandomHex(count int) (string, error) {
 	bytes := make([]byte, count)
 	_, err := rand.Read(bytes)
@@ -128,6 +140,14 @@ func GenerateRandomHex(count int) (string, error) {
 	return randomHex, nil
 }
 
+/**
+ * Generate Authorization Header
+ *
+ * This method helps to generate the authorization header and sign it
+ * using the private key. This is required to be used for both Token and Person API
+ *
+ * Returns Signed Header
+ */
 func GenerateAuthorizationHeader(apiURL string, params ParamsSort, httpMethod string, contentType string, environment string, appId string, privateKey *rsa.PrivateKey, clientSecret string) (string, error) {
 	nonceValue, err := GenerateRandomHex(20)
 	if err != nil {
@@ -135,7 +155,7 @@ func GenerateAuthorizationHeader(apiURL string, params ParamsSort, httpMethod st
 	}
 	timestamp := strconv.Itoa(int(time.Now().UnixMilli()))
 
-	if (environment == common.SINPASS_TEST_ENVIRONMENT) || (environment == common.SINPASS_PRODUCTION_ENVIRONMENT) {
+	if (environment == SINPASS_TEST_ENVIRONMENT) || (environment == SINPASS_PRODUCTION_ENVIRONMENT) {
 		// Only when environment is TEST or PRODUCTION
 		baseString := GenerateBaseString(httpMethod, apiURL, appId, params, contentType, nonceValue, timestamp)
 
@@ -156,10 +176,17 @@ func GenerateAuthorizationHeader(apiURL string, params ParamsSort, httpMethod st
 	}
 }
 
+/**
+ * Decode
+ *
+ * This method helps to decode the payload data into normal form.
+ *
+ * Returns normalized(decoded) []byte.
+ */
 func Decode(payload string) ([]byte, error) {
 	s := strings.Split(payload, ".")
 	if len(s) < 2 {
-		return nil, errors.New(common.INVALID_TOKEN)
+		return nil, errors.New(INVALID_TOKEN)
 	}
 
 	decodedData, err := base64.RawStdEncoding.DecodeString(s[1])
@@ -169,6 +196,16 @@ func Decode(payload string) ([]byte, error) {
 	return decodedData, err
 }
 
+/**
+ * Verify JWS
+ *
+ * This method takes in a JSON Web Signature and will check against
+ * the public key for its validity and to retrieve the decoded data.
+ * This verification is required for the decoding of the access token and
+ * response from Person API
+ *
+ * Returns decoded data
+ */
 func VerifyJWS(publicCert string, accessToken string) ([]byte, error) {
 	keyData, err := ioutil.ReadFile(publicCert)
 	if err != nil {
@@ -194,10 +231,17 @@ func VerifyJWS(publicCert string, accessToken string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Println("JWS DECODE PASSED")
 	return claimSet, nil
 }
 
+/**
+ * Decypt JWE
+ *
+ * This method takes in a JSON Web Encrypted string and will decrypt it using the
+ * private key. This is required to decrypt the data from Person API
+ *
+ * Returns decrypted data
+ */
 func DecryptJWE(pemPrivaKey *rsa.PrivateKey, compactJWE string) (string, error) {
 	payload, err := jose.ParseEncrypted(compactJWE)
 	if err != nil {
@@ -207,7 +251,6 @@ func DecryptJWE(pemPrivaKey *rsa.PrivateKey, compactJWE string) (string, error) 
 	if err != nil {
 		return "", err
 	}
-	fmt.Println("vl", payload, "\nres", string(decrypted), "\nerr", err)
 
 	return string(decrypted), nil
 }
@@ -220,13 +263,20 @@ func Unmarshal(data []byte, v interface{}) error {
 	return nil
 }
 
+/**
+ * AuthHeader
+ *
+ * This method removes the duplication use of environment based condition for generating auth header.
+ *
+ * Returns fully generated auth Header as string.
+ */
 func AuthHeader(apiURL string, params ParamsSort, httpMethod string, contentType string, environment string, appId string, privateKey *rsa.PrivateKey, clientSecret string) (string, error) {
 	var authHeader string
 	var err error
 
-	if environment == common.SINPASS_SANDBOX_ENVIRONMENT {
+	if environment == SINPASS_SANDBOX_ENVIRONMENT {
 		// No Headers
-	} else if (environment == common.SINPASS_TEST_ENVIRONMENT) || (environment == common.SINPASS_PRODUCTION_ENVIRONMENT) {
+	} else if (environment == SINPASS_TEST_ENVIRONMENT) || (environment == SINPASS_PRODUCTION_ENVIRONMENT) {
 		authHeader, err = GenerateAuthorizationHeader(
 			apiURL,
 			params,
@@ -241,7 +291,7 @@ func AuthHeader(apiURL string, params ParamsSort, httpMethod string, contentType
 			return authHeader, err
 		}
 	} else {
-		return authHeader, errors.New(common.ERROR_UNKNOWN_AUTH_LEVEL)
+		return authHeader, errors.New(ERROR_UNKNOWN_AUTH_LEVEL)
 	}
 	return authHeader, nil
 }

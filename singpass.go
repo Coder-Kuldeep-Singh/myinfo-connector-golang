@@ -6,13 +6,11 @@ import (
 	"errors"
 	"log"
 	"strings"
-
-	"github.com/mavensingh/myinfo-connector-golang/common"
-	"github.com/mavensingh/myinfo-connector-golang/lib"
 )
 
 var isInitialized bool
 
+// App Config structure
 type AppConfig struct {
 	MYINFO_SIGNATURE_CERT_PUBIC_CERT string
 	CLIENT_ID                        string
@@ -32,7 +30,7 @@ type AppConfig struct {
 	PROXY_PERSON_URL string // Configure your proxy url here, if anys
 }
 
-// MyInfoConnector passes the
+// This function validate and initialize all the config variables
 func MyInfoConnector(appConfig AppConfig) error {
 	err := appConfig.CheckConfig()
 	if err != nil {
@@ -44,56 +42,66 @@ func MyInfoConnector(appConfig AppConfig) error {
 
 func (appConfig AppConfig) CheckConfig() error {
 	if strings.TrimSpace(appConfig.MYINFO_SIGNATURE_CERT_PUBIC_CERT) == "" {
-		return errors.New(common.ERROR_CONFIGURATION_ATTRIBUTES_NOT_FOUND)
+		return errors.New(ERROR_CONFIGURATION_ATTRIBUTES_NOT_FOUND)
 	}
 	if strings.TrimSpace(appConfig.CLIENT_ID) == "" {
-		return errors.New(common.ERROR_CONFIGURATION_CLIENT_ID_NOT_FOUND)
+		return errors.New(ERROR_CONFIGURATION_CLIENT_ID_NOT_FOUND)
 	}
 	if strings.TrimSpace(appConfig.CLIENT_SECRET) == "" {
-		return errors.New(common.ERROR_CONFIGURATION_CLIENT_SECRET_NOT_FOUND)
+		return errors.New(ERROR_CONFIGURATION_CLIENT_SECRET_NOT_FOUND)
 	}
 	if strings.TrimSpace(appConfig.REDIRECT_URL) == "" {
-		return errors.New(common.ERROR_CONFIGURATION_REDIRECT_URL_NOT_FOUND)
+		return errors.New(ERROR_CONFIGURATION_REDIRECT_URL_NOT_FOUND)
 	}
 	if strings.TrimSpace(appConfig.CLIENT_SECURE_CERT) == "" {
-		return errors.New(common.ERROR_CONFIGURATION_CLIENT_SECURE_CERT_NOT_FOUND)
+		return errors.New(ERROR_CONFIGURATION_CLIENT_SECURE_CERT_NOT_FOUND)
 	}
 	if strings.TrimSpace(appConfig.CLIENT_SECURE_CERT_PASSPHRASE) == "" {
-		return errors.New(common.ERROR_CONFIGURATION_CLIENT_SECURE_CERT_PASSPHRASE_NOT_FOUND)
+		return errors.New(ERROR_CONFIGURATION_CLIENT_SECURE_CERT_PASSPHRASE_NOT_FOUND)
 	}
 	if strings.TrimSpace(appConfig.ENVIRONMENT) == "" {
-		return errors.New(common.ERROR_CONFIGURATION_ENVIRONMENT_NOT_FOUND)
+		return errors.New(ERROR_CONFIGURATION_ENVIRONMENT_NOT_FOUND)
 	}
 	if strings.TrimSpace(appConfig.TOKEN_URL) == "" {
-		return errors.New(common.ERROR_CONFIGURATION_TOKEN_URL_NOT_FOUND)
+		return errors.New(ERROR_CONFIGURATION_TOKEN_URL_NOT_FOUND)
 	}
 	if strings.TrimSpace(appConfig.PERSON_URL) == "" {
-		return errors.New(common.ERROR_CONFIGURATION_PERSON_URL_NOT_FOUND)
+		return errors.New(ERROR_CONFIGURATION_PERSON_URL_NOT_FOUND)
 	}
 	if strings.TrimSpace(appConfig.ATTRIBUTES) == "" {
-		return errors.New(common.ERROR_CONFIGURATION_ATTRIBUTES_NOT_FOUND)
+		return errors.New(ERROR_CONFIGURATION_ATTRIBUTES_NOT_FOUND)
 	}
 
 	if strings.TrimSpace(appConfig.USE_PROXY) == "Y" {
 		if strings.TrimSpace(appConfig.PROXY_TOKEN_URL) == "" {
-			return errors.New(common.ERROR_CONFIGURATION_PROXY_TOKEN_URL_NOT_FOUND)
+			return errors.New(ERROR_CONFIGURATION_PROXY_TOKEN_URL_NOT_FOUND)
 		}
 		if strings.TrimSpace(appConfig.PROXY_PERSON_URL) == "" {
-			return errors.New(common.ERROR_CONFIGURATION_PROXY_PERSON_URL_NOT_FOUND)
+			return errors.New(ERROR_CONFIGURATION_PROXY_PERSON_URL_NOT_FOUND)
 		}
 	}
 	return nil
 }
 
+/**
+* Get MyInfo Person Data (MyInfo Token + Person API)
+*
+* This method takes in all the required variables, invoke the following APIs.
+* - Get Access Token (Token API) - to get Access Token by using the Auth Code and State
+* - Get Person Data (Person API) - to get Person Data by using the Access Token
+*
+* Returns the Person Data as []byte (Payload decrypted + Signature validated)
+*
+ */
 func (appConfig AppConfig) GetMyInfoPersonData(authCode, state string) ([]byte, error) {
 	if !isInitialized {
-		return nil, errors.New(common.ERROR_UNKNOWN_NOT_INIT)
+		return nil, errors.New(ERROR_UNKNOWN_NOT_INIT)
 	}
 
 	var personData []byte
 	var err error
 
-	txnNo, err := lib.GenerateRandomHex(10)
+	txnNo, err := GenerateRandomHex(10)
 	if err != nil {
 		return personData, err
 	}
@@ -109,7 +117,6 @@ func (appConfig AppConfig) GetMyInfoPersonData(authCode, state string) ([]byte, 
 		return personData, err
 	}
 
-	log.Println("TOKEN API RESPONSE: ", data)
 	log.Println("ACCESS TOKEN: ", data["access_token"].(string))
 
 	personData, err = appConfig.GetPersonData(data["access_token"].(string), txnNo)
