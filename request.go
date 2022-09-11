@@ -8,13 +8,10 @@ import (
 	"net/http"
 )
 
-/**
- * Send Request
- *
- * This function is a wrapper to make https call
- *
- * Returns the response of the hit api
- */
+/*
+This function is a wrapper to make https call.
+Returns the response of the hit api.
+*/
 func SendRequest(request *http.Request) ([]byte, error) {
 	client := &http.Client{
 		Transport: &http.Transport{

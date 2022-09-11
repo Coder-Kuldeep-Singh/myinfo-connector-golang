@@ -8,16 +8,12 @@ import (
 	"net/http"
 )
 
-/**
- * Get Person Data from MyInfo Person API
- *
- * This method calls the Person API and returns a JSON response with the
- * personal data that was requested. Your application needs to provide a
- * valid "access token" in exchange for the JSON data. Once your application
- * receives this JSON data, you can use this data.
- *
- * Returns the Person Data (Payload decrypted + Signature validated)
- */
+/*
+This method calls the Person API and returns a JSON response with the personal data that was requested.
+Your application needs to provide a valid "access token" in exchange for the JSON data.
+Once your application receives this JSON data, you can use this data.
+Returns the Person Data (Payload decrypted + Signature validated).
+*/
 
 func (appConfig AppConfig) GetPersonData(accessToken, txnNo string) ([]byte, error) {
 	if !isInitialized {
@@ -38,15 +34,12 @@ func (appConfig AppConfig) GetPersonData(accessToken, txnNo string) ([]byte, err
 
 }
 
-/**
- * Get Person Data With Key
- *
- * This method will take in the accessToken from Token API and decode it
- * to get the sub(eg either uinfin or uuid). It will call the Person API using the token and sub.
- * It will verify the Person API data's signature and decrypt the result.
- *
- * Returns decrypted result from calling Person API
- */
+/*
+This method will take in the accessToken from Token API and decode it to get the sub(eg either uinfin or uuid).
+It will call the Person API using the token and sub.
+It will verify the Person API data's signature and decrypt the result.
+Returns decrypted result from calling Person API.
+*/
 func (appConfig AppConfig) GetPersonDataWithKey(accessToken, txnNo string, privateKey *rsa.PrivateKey) ([]byte, error) {
 	if !isInitialized {
 		return nil, errors.New(ERROR_UNKNOWN_NOT_INIT)
@@ -93,14 +86,10 @@ func (appConfig AppConfig) GetPersonDataWithKey(accessToken, txnNo string, priva
 
 }
 
-/**
- * Call Person API
- *
- * This method will generate the Authorization Header and
- * and call the Person API to get the encrypted Person Data
- *
- * Returns result from calling Person API
- */
+/*
+This method will generate the Authorization Header and call the Person API to get the encrypted Person Data.
+Returns result from calling Person API.
+*/
 func (appConfig AppConfig) CallPersonAPI(sub, accessToken, txnNo string, privateKey *rsa.PrivateKey) ([]byte, error) {
 	if !isInitialized {
 		return nil, errors.New(ERROR_UNKNOWN_NOT_INIT)

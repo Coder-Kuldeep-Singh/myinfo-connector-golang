@@ -8,16 +8,13 @@ import (
 	"strings"
 )
 
-/**
- * Get Access Token from MyInfo Token API
- *
- * This method calls the Token API and obtain an "access token" from response,
- * which can be used to call the Person API for the actual data.
- * Your application needs to provide a valid "authorisation code"
- * from the authorise API(callback) in exchange for the valid "access token".
- *
- * Returns the Access Token API response as []byte which includes all data sent by Access Token API
- */
+/*
+This method calls the Token API and obtain an "access token" from response,
+which can be used to call the Person API for the actual data.
+Your application needs to provide a valid "authorisation code"
+from the authorise API(callback) in exchange for the valid "access token".
+Returns the Access Token API response as []byte which includes all data sent by Access Token API.
+*/
 
 func (appConfig AppConfig) GetAccessToken(authCode string, state string) ([]byte, error) {
 	if !isInitialized {
@@ -38,14 +35,10 @@ func (appConfig AppConfig) GetAccessToken(authCode string, state string) ([]byte
 	return tokenData, nil
 }
 
-/**
- * Call (Access) Token API
- *
- * This method will generate the Authorization Header
- * and call the Token API to retrieve access token.
- *
- * Returns the full json response as []byte.
- */
+/*
+This method will generate the Authorization Header and call the Token API to retrieve access token.
+Returns the full json response as []byte.
+*/
 func (appConfig AppConfig) CallTokenAPI(authCode string, privateKey *rsa.PrivateKey, state string) ([]byte, error) {
 	if !isInitialized {
 		return nil, errors.New(ERROR_UNKNOWN_NOT_INIT)

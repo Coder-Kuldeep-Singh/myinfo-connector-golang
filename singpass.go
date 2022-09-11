@@ -83,16 +83,13 @@ func (appConfig AppConfig) CheckConfig() error {
 	return nil
 }
 
-/**
-* Get MyInfo Person Data (MyInfo Token + Person API)
-*
-* This method takes in all the required variables, invoke the following APIs.
-* - Get Access Token (Token API) - to get Access Token by using the Auth Code and State
-* - Get Person Data (Person API) - to get Person Data by using the Access Token
-*
-* Returns the Person Data as []byte (Payload decrypted + Signature validated)
-*
- */
+/*
+Get MyInfo Person Data (MyInfo Token + Person API).
+This method takes in all the required variables, invoke the following APIs.
+Get Access Token (Token API) - to get Access Token by using the Auth Code and State.
+Get Person Data (Person API) - to get Person Data by using the Access Token.
+Returns the Person Data as []byte (Payload decrypted + Signature validated).
+*/
 func (appConfig AppConfig) GetMyInfoPersonData(authCode, state string) ([]byte, error) {
 	if !isInitialized {
 		return nil, errors.New(ERROR_UNKNOWN_NOT_INIT)

@@ -98,13 +98,10 @@ func GenerateBaseString(httpMethod string, apiURL string, appId string, params P
 	return baseString
 }
 
-/**
- * Get Private Key
- *
- * This methods will decrypt P12 Certificate and retrieve the Private key with the passphrase
-
- * Returns private key from p12
- */
+/*
+This methods will decrypt P12 Certificate and retrieve the Private key with the passphrase.
+Returns private key from p12.
+*/
 func DecryptPrivateKey(secureCertLocation string, passphrase string) (*rsa.PrivateKey, error) {
 	fileData, err := ioutil.ReadFile(secureCertLocation)
 	if err != nil {
@@ -123,13 +120,10 @@ func DecryptPrivateKey(secureCertLocation string, passphrase string) (*rsa.Priva
 	return privateKey, nil
 }
 
-/**
- * Generate Random Hex
- *
- * This method helps to generate unique Transaction ID(txnNo)
- *
- * Returns random hex(txnNo)
- */
+/*
+This method helps to generate unique Transaction ID(txnNo).
+Returns random hex(txnNo).
+*/
 func GenerateRandomHex(count int) (string, error) {
 	bytes := make([]byte, count)
 	_, err := rand.Read(bytes)
@@ -140,14 +134,11 @@ func GenerateRandomHex(count int) (string, error) {
 	return randomHex, nil
 }
 
-/**
- * Generate Authorization Header
- *
- * This method helps to generate the authorization header and sign it
- * using the private key. This is required to be used for both Token and Person API
- *
- * Returns Signed Header
- */
+/*
+This method helps to generate the authorization header and sign it using the private key.
+This is required to be used for both Token and Person API.
+Returns Signed Header
+*/
 func GenerateAuthorizationHeader(apiURL string, params ParamsSort, httpMethod string, contentType string, environment string, appId string, privateKey *rsa.PrivateKey, clientSecret string) (string, error) {
 	nonceValue, err := GenerateRandomHex(20)
 	if err != nil {
@@ -176,13 +167,10 @@ func GenerateAuthorizationHeader(apiURL string, params ParamsSort, httpMethod st
 	}
 }
 
-/**
- * Decode
- *
- * This method helps to decode the payload data into normal form.
- *
- * Returns normalized(decoded) []byte.
- */
+/*
+This method helps to decode the payload data into normal form.
+Returns normalized(decoded) []byte.
+*/
 func Decode(payload string) ([]byte, error) {
 	s := strings.Split(payload, ".")
 	if len(s) < 2 {
@@ -196,16 +184,13 @@ func Decode(payload string) ([]byte, error) {
 	return decodedData, err
 }
 
-/**
- * Verify JWS
- *
- * This method takes in a JSON Web Signature and will check against
- * the public key for its validity and to retrieve the decoded data.
- * This verification is required for the decoding of the access token and
- * response from Person API
- *
- * Returns decoded data
- */
+/*
+This method takes in a JSON Web Signature and will check against
+the public key for its validity and to retrieve the decoded data.
+This verification is required for the decoding of the access token and
+response from Person API.
+Returns decoded data.
+*/
 func VerifyJWS(publicCert string, accessToken string) ([]byte, error) {
 	keyData, err := ioutil.ReadFile(publicCert)
 	if err != nil {
@@ -234,14 +219,11 @@ func VerifyJWS(publicCert string, accessToken string) ([]byte, error) {
 	return claimSet, nil
 }
 
-/**
- * Decypt JWE
- *
- * This method takes in a JSON Web Encrypted string and will decrypt it using the
- * private key. This is required to decrypt the data from Person API
- *
- * Returns decrypted data
- */
+/*
+This method takes in a JSON Web Encrypted string and will decrypt it using the private key.
+This is required to decrypt the data from Person API.
+Returns decrypted data.
+*/
 func DecryptJWE(pemPrivaKey *rsa.PrivateKey, compactJWE string) (string, error) {
 	payload, err := jose.ParseEncrypted(compactJWE)
 	if err != nil {
@@ -263,13 +245,10 @@ func Unmarshal(data []byte, v interface{}) error {
 	return nil
 }
 
-/**
- * AuthHeader
- *
- * This method removes the duplication use of environment based condition for generating auth header.
- *
- * Returns fully generated auth Header as string.
- */
+/*
+This method removes the duplication use of environment based condition for generating auth header.
+Returns fully generated auth Header as string.
+*/
 func AuthHeader(apiURL string, params ParamsSort, httpMethod string, contentType string, environment string, appId string, privateKey *rsa.PrivateKey, clientSecret string) (string, error) {
 	var authHeader string
 	var err error
